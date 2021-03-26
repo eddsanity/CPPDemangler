@@ -73,7 +73,7 @@ Compiling with gcc, but stopping before the assembler is run to view the assembl
 <details>
     <summary>click to expand code</summary>
 
-    ```assembly
+```assembly
 
         .file	"main.cpp"
         .section	.text$_ZN5PointC1Eii,"x"
@@ -254,7 +254,7 @@ Compiling with gcc, but stopping before the assembler is run to view the assembl
         .ident	"GCC: (MinGW.org GCC-6.3.0-1) 6.3.0"
         .def	_puts;	.scl	2;	.type	32;	.endef
 
-    ```
+```
 </details>
 
 What's immediately obvious is that the all of the member functions names, including the constructors, aren't present in readable form. This is because they have been mangled by the compiler into the following:
