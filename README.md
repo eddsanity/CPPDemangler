@@ -29,5 +29,6 @@ Once the executable is in your PATH, demangling is very straightforward since th
     ~/somedirectory/$ cppdemangle c++11 somecppfile.cpp
 ```
 # Limitations
-Since the compiler arguments are hardcoded and not user provided, it is **very** limited in what it can actually compile. I might 
-parse compiler arguments in the future if I end up needing it. 
+- Compiler flags are hardcoded and not user provided, so it is **very** limited in what it can actually compile. I might 
+    parse compiler arguments in the future if I end up needing it. 
+- Only supports `cout` as the output stream for the mangled -> demangled mapping. Will probably implement some fstream options later.

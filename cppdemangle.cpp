@@ -28,7 +28,7 @@ auto main(int argc, char *argv[]) -> int
     demangling_table = make_demangling_table(used_std, /* CPP file */ argv[2]);
 
     for (auto it = demangling_table.begin(); it != demangling_table.end(); it++)
-        std::cout << it->first << " : " << it->second << "\n";
+        std::cout << it->first << " -> " << it->second << "\n";
     return 0;
 }
 
