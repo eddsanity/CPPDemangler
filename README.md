@@ -5,8 +5,8 @@ tool is my attempt at making reading C++ disassembly a little bit more tolerable
 # Dependencies
 - A version of g++ that supports GNU++11.
 - - MinGW for Windows.
-- [nm](https://sourceware.org/binutils/docs/binutils/nm.html).
-- [c++filt](https://sourceware.org/binutils/docs/binutils/c_002b_002bfilt.html).
+- [nm](https://sourceware.org/binutils/docs/binutils/nm.html) (shipped with gcc).
+- [c++filt](https://sourceware.org/binutils/docs/binutils/c_002b_002bfilt.html) (shipped with gcc).
 
 # Build
 ## Windows
