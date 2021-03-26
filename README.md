@@ -31,7 +31,7 @@ Once the executable is in your PATH, demangling is very straightforward since th
 # Limitations
 - Compiler flags are hardcoded and not user provided, so it is **very** limited in what it can actually compile. I might 
     parse compiler arguments in the future if I end up needing it. 
-- Only supports `cout` as the output stream for the mangled -> demangled mapping. Will probably implement some fstream options later.
+- Doesn't support dictating output directory. All demangled assembly files will be written in the same directory as source.
 
 # Full example
 Assume the given C++ file is of interest for disassembly.
