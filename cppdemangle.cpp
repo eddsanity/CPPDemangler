@@ -62,10 +62,7 @@ auto demangle_sym_table(const std::string &sym_table, int &pipe_status) -> std::
         std::smatch match = *i;
         mangled_names.push_back(match.str());
     }
-    std::cout << "=================\n";
-    for(int i = 0; i < mangled_names.size(); i++)
-        std::cout << mangled_names[i] << std::endl;
-    std::cout << "=================\n";
+    
     std::string sout = eutil::exec("c++filt", mangled_names, pipe_status);
 
     std::stringstream ss(sout);
