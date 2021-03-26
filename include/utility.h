@@ -21,6 +21,16 @@ namespace eutil
             return fileWithExtension;
         return fileWithExtension.substr(0, dot_idx);
     }
+
+    auto replace(std::string& str, const std::string& strOld, const std::string& strNew) -> void
+    {
+        size_t curr_pos = 0;
+        while((curr_pos = str.find(strOld, curr_pos)) != std::string::npos)
+        {
+            str.replace(curr_pos, strOld.length(), strNew);
+            curr_pos += strNew.length();
+        }
+    }
 }
 
 #endif

@@ -3,11 +3,13 @@
 #include <map>
 #include <regex>
 #include <sstream>
+#include <fstream>
 #include "include/exec.h"
 
-auto compile_obj(const std::string &FileName, const std::string &used_std, int &pipe_status) -> std::string;
+auto compile_obj(const std::string &file_name, const std::string &used_std, int &pipe_status) -> std::string;
 auto demangle_sym_table(const std::string &sym_table, int &pipe_status) -> std::map<std::string, std::string>;
-auto make_demangling_table(const std::string &used_std, const std::string &CppFileName) -> std::map<std::string, std::string>;
+auto make_demangling_table(const std::string &used_std, const std::string &Cppfile_name) -> std::map<std::string, std::string>;
+auto make_asm_file(std::map<std::string, std::string> &demangling_table, const std::string &used_std, const std::string &file_name, std::ostream &outstream) -> void;
 
 auto main(int argc, char *argv[]) -> int
 {
@@ -26,16 +28,27 @@ auto main(int argc, char *argv[]) -> int
         used_std = argv[1];
 
     demangling_table = make_demangling_table(used_std, /* CPP file */ argv[argc - 1]);
+    std::string file_name_no_extension = eutil::strip_extension(argv[argc - 1]);
+
+    if (!demangling_table.empty())
+    {
+        std::ofstream asm_file(file_name_no_extension + ".s");
+        make_asm_file(demangling_table, used_std, file_name_no_extension, asm_file);
+        asm_file.close();
+    }
 
     for (auto it = demangling_table.begin(); it != demangling_table.end(); it++)
-        std::cout << it->first << " -> " << it->second << "\n";
+        std::cout << it->first << " -> " << it->second << std::endl;
+
+    std::cout << "Demangled assembly file \"" << file_name_no_extension << ".s\" created.\n";
+
     return 0;
 }
 
-auto compile_obj(const std::string &FileName, const std::string &used_std, int &pipe_status) -> std::string
+auto compile_obj(const std::string &file_name, const std::string &used_std, int &pipe_status) -> std::string
 {
     // compile single cpp file into obj file
-    std::vector<std::string> gcc_args{"-O0", "-std=" + used_std, FileName + ".cpp", "-o", FileName + ".o"};
+    std::vector<std::string> gcc_args{"-O0", "-std=" + used_std, file_name + ".cpp", "-o", file_name + ".o"};
     return eutil::exec("g++", gcc_args, pipe_status);
 }
 
@@ -43,13 +56,14 @@ auto demangle_sym_table(const std::string &sym_table, int &pipe_status) -> std::
 {
     std::map<std::string, std::string> demangling_table;
 
-    // https://itanium-cxx-abi.github.io/cxx-abi/abi.html#mangling
-    #ifdef WIN32
-    std::regex mangled_name_regex("(\\b__Z\\w+\\b)");
-    #endif
-    #ifdef __linux__
+// https://itanium-cxx-abi.github.io/cxx-abi/abi.html#mangling
+#ifdef WIN32
+// |\\b__Z\\w+\\b
+    std::regex mangled_name_regex("(__Z\\w+\\b)");
+#endif
+#ifdef __linux__
     std::regex mangled_name_regex("(\\b_Z\\w+\\b)");
-    #endif
+#endif
 
     auto mangled_table_begin = std::sregex_iterator(sym_table.begin(), sym_table.end(), mangled_name_regex);
     auto mangled_table_end = std::sregex_iterator();
@@ -62,7 +76,7 @@ auto demangle_sym_table(const std::string &sym_table, int &pipe_status) -> std::
         std::smatch match = *i;
         mangled_names.push_back(match.str());
     }
-    
+
     std::string sout = eutil::exec("c++filt", mangled_names, pipe_status);
 
     std::stringstream ss(sout);
@@ -75,13 +89,13 @@ auto demangle_sym_table(const std::string &sym_table, int &pipe_status) -> std::
     return demangling_table;
 }
 
-auto make_demangling_table(const std::string &used_std, const std::string &CppFileName) -> std::map<std::string, std::string>
+auto make_demangling_table(const std::string &used_std, const std::string &Cppfile_name) -> std::map<std::string, std::string>
 {
     std::string sout = "";
     int pipe_status = -1;
     std::map<std::string, std::string> demangling_table;
 
-    std::string file_name_no_ext = eutil::strip_extension(CppFileName);
+    std::string file_name_no_ext = eutil::strip_extension(Cppfile_name);
 
     sout = compile_obj(file_name_no_ext, used_std, pipe_status);
     std::cerr << sout;
@@ -93,7 +107,7 @@ auto make_demangling_table(const std::string &used_std, const std::string &CppFi
     if (pipe_status == -1)
         return demangling_table;
 
-// clean-up
+    // clean-up
 #ifdef WIN32
     eutil::exec("del", {file_name_no_ext + ".o"}, pipe_status);
 #endif
@@ -105,4 +119,28 @@ auto make_demangling_table(const std::string &used_std, const std::string &CppFi
         std::cerr << "Pipe failed during cleanup.";
 
     return demangle_sym_table(sout, pipe_status);
+}
+
+auto make_asm_file(std::map<std::string, std::string> &demangling_table, const std::string &used_std, const std::string &file_name, std::ostream &outstream) -> void
+{
+    int pipe_status = -1;
+    std::vector<std::string> gcc_args{"-O0", "-std=" + used_std, file_name + ".cpp", "-fverbose-asm", "-S", "-o", file_name + ".s"};
+    std::string sout = eutil::exec("g++", gcc_args, pipe_status);
+
+    if (pipe_status == -1)
+        std::cerr << "Pipe failed during cleanup.";
+
+    std::ifstream asm_file(file_name + ".s");
+    std::string file_txt = "";
+    if (asm_file.is_open())
+    {
+        std::string line = "";
+        while (std::getline(asm_file, line))
+            file_txt += line + "\n";
+    }
+    asm_file.close();
+    for (auto it = demangling_table.begin(); it != demangling_table.end(); it++)
+        eutil::replace(file_txt, it->first, it->second);
+    
+    outstream << file_txt;
 }
