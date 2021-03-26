@@ -62,7 +62,7 @@ auto demangle_sym_table(const std::string &sym_table, int &pipe_status) -> std::
     std::regex mangled_name_regex("(__Z\\w+\\b)");
 #endif
 #ifdef __linux__
-    std::regex mangled_name_regex("(\\b_Z\\w+\\b)");
+    std::regex mangled_name_regex("(__Z\\w+\\b)");
 #endif
 
     auto mangled_table_begin = std::sregex_iterator(sym_table.begin(), sym_table.end(), mangled_name_regex);
