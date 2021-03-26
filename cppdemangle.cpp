@@ -48,7 +48,7 @@ auto main(int argc, char *argv[]) -> int
 auto compile_obj(const std::string &file_name, const std::string &used_std, int &pipe_status) -> std::string
 {
     // compile single cpp file into obj file
-    std::vector<std::string> gcc_args{"-O0", "-std=" + used_std, file_name + ".cpp", "-o", file_name + ".o"};
+    std::vector<std::string> gcc_args{"-O0", "-w", "-std=" + used_std, file_name + ".cpp", "-c", "-o", file_name + ".o"};
     return eutil::exec("g++", gcc_args, pipe_status);
 }
 
