@@ -35,6 +35,7 @@ Once the executable is in your PATH, demangling is very straightforward since th
 
 # Full example
 Assume the given C++ file is of interest for disassembly.
+### main.cpp
 ```cpp
 // main.cpp
 #include <cstdio>
