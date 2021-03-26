@@ -22,20 +22,12 @@ namespace eutil
         std::string sout;
         std::string args = eutil::make_string(argv);
 
-        // copy of command, just to give some feedback of what command is being run.
-        std::string dbgCmd = cmd;
-        if (argv.size() > 6)
-            dbgCmd += " [...] 2>&1";
-        else
-            dbgCmd += args + " 2>&1";
-
         cmd += args;
         // redirect stderr to stdout
         cmd += " 2>&1";
 
         std::unique_ptr<FILE, decltype(&_pclose)> pipe(_popen(cmd.c_str(), "r"), _pclose);
 
-        std::cout << dbgCmd << "\n";
         if (!pipe)
             exec_status = -1;
         else
