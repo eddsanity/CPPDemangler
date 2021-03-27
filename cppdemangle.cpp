@@ -19,7 +19,7 @@ auto main(int argc, char *argv[]) -> int
 
     if (argc == 1)
     {
-        std::cerr << "CPPDEMANGLE failed: no arguments passed\n";
+        std::cerr << "CPPDEMANGLE failed: no arguments passed" << std::endl;
         return -1;
     }
     else if (argc == 2)
@@ -54,12 +54,13 @@ auto compile_obj(const std::string &file_name, const std::string &used_std, int 
 
 auto demangle_sym_table(const std::string &sym_table, int &pipe_status) -> std::map<std::string, std::string>
 {
+    constexpr size_t PARTITION_SIZE = 32;
     // mangled -> demangled
     std::map<std::string, std::string> demangling_table;
 
-// https://itanium-cxx-abi.github.io/cxx-abi/abi.html#mangling
+    // https://itanium-cxx-abi.github.io/cxx-abi/abi.html#mangling
 #ifdef WIN32
-// |\\b__Z\\w+\\b
+    // |\\b__Z\\w+\\b
     std::regex mangled_name_regex("(__Z\\w+\\b)");
 #endif
 #ifdef __linux__
@@ -74,19 +75,31 @@ auto demangle_sym_table(const std::string &sym_table, int &pipe_status) -> std::
 
     for (std::sregex_iterator i = mangled_table_begin; i != mangled_table_end; i++)
     {
-        std::smatch match = *i;
-        mangled_names.push_back(match.str());
+#if 0
+        std::string matched = (*i).str();
+        if (!eutil::contains(mangled_names, matched))
+            mangled_names.push_back(matched);
+#endif
+#if 1
+        std::smatch matched = *i;
+        mangled_names.push_back(matched.str());
+#endif
     }
 
-    std::string sout = eutil::exec("c++filt", mangled_names, pipe_status);
-
-    std::stringstream ss(sout);
-    std::string demangled_name = "";
-    while (std::getline(ss, demangled_name))
-        demangled_names.push_back(demangled_name);
+    std::vector<std::vector<std::string>> partitioned_mangled_names;
+    eutil::partition(mangled_names, PARTITION_SIZE, partitioned_mangled_names);
+    for (auto it = partitioned_mangled_names.cbegin(); it != partitioned_mangled_names.cend(); it++)
+    {
+        std::string sout = eutil::exec("c++filt", *it, pipe_status);
+        std::stringstream ss(sout);
+        std::string demangled_name = "";
+        while (std::getline(ss, demangled_name))
+            demangled_names.push_back(demangled_name);
+    }
 
     for (size_t idx = 0; idx < mangled_names.size(); idx++)
         demangling_table[mangled_names[idx]] = demangled_names[idx];
+
     return demangling_table;
 }
 
@@ -99,7 +112,7 @@ auto make_demangling_table(const std::string &used_std, const std::string &Cppfi
     std::string file_name_no_ext = eutil::strip_extension(Cppfile_name);
 
     sout = compile_obj(file_name_no_ext, used_std, pipe_status);
-    std::cerr << sout;
+    std::cerr << sout << std::flush;
     if (pipe_status == -1 || sout.size() > 0)
         return demangling_table;
 
@@ -108,7 +121,7 @@ auto make_demangling_table(const std::string &used_std, const std::string &Cppfi
     if (pipe_status == -1)
         return demangling_table;
 
-    // clean-up
+        // clean-up
 #ifdef WIN32
     eutil::exec("del", {file_name_no_ext + ".o"}, pipe_status);
 #endif
@@ -117,7 +130,7 @@ auto make_demangling_table(const std::string &used_std, const std::string &Cppfi
 #endif
 
     if (pipe_status == -1)
-        std::cerr << "Pipe failed during cleanup.";
+        std::cerr << "Pipe failed during cleanup." << std::flush;
 
     return demangle_sym_table(sout, pipe_status);
 }
@@ -129,7 +142,7 @@ auto make_asm_file(std::map<std::string, std::string> &demangling_table, const s
     std::string sout = eutil::exec("g++", gcc_args, pipe_status);
 
     if (pipe_status == -1)
-        std::cerr << "Pipe failed during cleanup.";
+        std::cerr << "Pipe failed during cleanup." << std::flush;
 
     std::ifstream asm_file(file_name + ".s");
     std::string file_txt = "";
@@ -142,6 +155,6 @@ auto make_asm_file(std::map<std::string, std::string> &demangling_table, const s
     asm_file.close();
     for (auto it = demangling_table.begin(); it != demangling_table.end(); it++)
         eutil::replace(file_txt, it->first, it->second);
-    
+
     outstream << file_txt;
 }
