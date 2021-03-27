@@ -32,6 +32,7 @@ Once the executable is in your PATH, demangling is very straightforward since th
 - Compiler flags are hardcoded and not user provided, so it is **very** limited in what it can actually compile. I might 
     parse compiler arguments in the future if I end up needing it. 
 - Doesn't support dictating output directory. All demangled assembly files will be written in the same directory as source.
+- Demangles names that are mangled using the same mangling scheme described in the [Itanium C++ ABI](https://itanium-cxx-abi.github.io/cxx-abi/abi.html#mangling), like those in code compiled by [clang 1.x and higher or gcc 3.5 and high](https://en.wikipedia.org/wiki/Name_mangling#How_different_compilers_mangle_the_same_functions) but not in code compiled by [MSVC](https://docs.microsoft.com/en-us/cpp/build/reference/decorated-names?view=msvc-160)
 
 # Full example
 Assume the given C++ file is of interest for disassembly.
